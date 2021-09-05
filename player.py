@@ -1,4 +1,5 @@
 import pygame
+from laser import Laser
 
 
 class Player(pygame.sprite.Sprite):
@@ -8,6 +9,11 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(midbottom=pos)
         self.speed = speed
         self.max_x_constraint = constraint
+        self.ready = True
+        self.laser_time = 0
+        self.laser_cooldown = 500
+
+        self.lasers = pygame.sprite.Group()
 
     # allows you to control player using the keyboard
     def getInput(self):
@@ -17,8 +23,17 @@ class Player(pygame.sprite.Sprite):
         elif keys[pygame.K_LEFT]:
             self.rect.x -= self.speed
 
-        if keys[pygame.K_SPACE]:
-            self.shoot_laser()
+        if keys[pygame.K_SPACE] and self.ready:
+            self.shootLaser()
+            self.ready = False
+            self.laser_time = pygame.time.get_ticks() # works
+
+    def recharge(self):
+        if not self.ready:
+            currentTime = pygame.time.get_ticks()
+            if currentTime - self.laser_time >= self.laser_cooldown:
+                self.ready = True
+
 
     # constraint of screen width of our games, do not allows player to go outside the textures
     def constraint(self):
@@ -28,8 +43,10 @@ class Player(pygame.sprite.Sprite):
             self.rect.right = self.max_x_constraint
 
     def shootLaser(self):
-        print('shoot laser')
+        self.lasers.add(Laser(self.rect.center, -8, self.rect.bottom))
 
     def update(self):
         self.getInput()
         self.constraint()
+        self.recharge()
+        self.lasers.update()
