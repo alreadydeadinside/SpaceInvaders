@@ -12,7 +12,6 @@ class Player(pygame.sprite.Sprite):
         self.ready = True
         self.laser_time = 0
         self.laser_cooldown = 500
-
         self.lasers = pygame.sprite.Group()
 
     # allows you to control player using the keyboard
@@ -27,6 +26,7 @@ class Player(pygame.sprite.Sprite):
             self.shootLaser()
             self.ready = False
             self.laser_time = pygame.time.get_ticks() # works
+
 
     def recharge(self):
         if not self.ready:
@@ -44,6 +44,7 @@ class Player(pygame.sprite.Sprite):
 
     def shootLaser(self):
         self.lasers.add(Laser(self.rect.center, -8, self.rect.bottom))
+
 
     def update(self):
         self.getInput()

@@ -2,23 +2,23 @@ import pygame
 
 
 class Alien(pygame.sprite.Sprite):
-    def __init__(self, color, x, y):
+    def __init__(self, color, x, y, game):
         super().__init__()
         file_path = color + '.png'
         self.image = pygame.image.load(file_path).convert_alpha()
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.kSpeed = 1
+        self.game = game
         if color == 'red':
             self.value = 100
         elif color == 'green':
             self.value = 200
         else:
             self.value = 300
-        self.k_speed = 1
 
     def update(self, direction):
-        self.rect.x += direction * self.k_speed
-
-        self.k_speed += 0.01
+        self.rect.x += direction * self.kSpeed
+        self.kSpeed = (self.game.score / 2000) + 1
 
 
 class Extra(pygame.sprite.Sprite):
