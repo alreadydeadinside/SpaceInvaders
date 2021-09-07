@@ -141,7 +141,6 @@ class Game:
                         pygame.quit()
                         sys.exit()
 
-
         # aliens
         if self.aliens:
             for alien in self.aliens:
@@ -166,6 +165,7 @@ class Game:
             victorySurf = self.font.render('You won', False, 'white')
             victoryRect = victorySurf.get_rect(center=(screenWidth / 2, screenHeight / 2))
             screen.blit(victorySurf, victoryRect)
+
     def run(self):
         self.player.update()
         self.player.draw(screen)
@@ -192,6 +192,7 @@ class Game:
         # update all sprite groups
         # draw all sprite groups
 
+
 if __name__ == "__main__":
     pygame.init()  # game start
     screenWidth = 800
@@ -215,6 +216,5 @@ if __name__ == "__main__":
                 game.alienShoot()
         screen.fill((30, 30, 30))
         game.run()
-        input("")
         pygame.display.flip()
         fps.tick(60)
