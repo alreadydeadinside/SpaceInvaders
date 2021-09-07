@@ -5,7 +5,7 @@ from laser import Laser
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, constraint, speed):
         super().__init__()
-        self.image = pygame.image.load("player.png").convert_alpha()
+        self.image = pygame.image.load("sprites/player.png").convert_alpha()
         self.rect = self.image.get_rect(midbottom=pos)
         self.speed = speed
         self.max_x_constraint = constraint

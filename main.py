@@ -34,10 +34,19 @@ class Game:
 
         # health and score setup
         self.lives = 3
-        self.live_surf = pygame.image.load('player.png').convert_alpha()
+        self.live_surf = pygame.image.load('sprites/player.png').convert_alpha()
         self.live_x_start_pos = screenWidth - (self.live_surf.get_size()[0] * 2 + 20)
         self.score = 0
-        self.font = pygame.font.Font("Pixeled.ttf", 20)
+        self.font = pygame.font.Font("font/Pixeled.ttf", 20)
+
+        # music setup
+        music = pygame.mixer.Sound('audio/main.wav')
+        music.set_volume(0.2)
+        music.play(loops=-1)
+        self.laser_sound = pygame.mixer.Sound('audio/shoot.wav')
+        self.laser_sound.set_volume(0.1)
+        self.explosion_sound = pygame.mixer.Sound('audio/explosion.wav')
+        self.explosion_sound.set_volume(0.1)
 
     # ===== Obstacle Methods =====
     def generateObstacle(self, x_start, y_start, offset_x):
@@ -88,6 +97,7 @@ class Game:
             randomAlien = choice(self.aliens.sprites())
             laserSprite = Laser(randomAlien.rect.center, 6, screenHeight)
             self.alien_lasers.add(laserSprite)
+            self.laser_sound.play()
 
     def extraAlienTimer(self):
         self.extra_spawn_time -= 1
@@ -110,6 +120,7 @@ class Game:
                     for alien in aliens_hit:
                         self.score += alien.value
                     laser.kill()
+                    self.explosion_sound.play()
 
                 # extra collision
                 if pygame.sprite.spritecollide(laser, self.extra, True):
@@ -155,7 +166,6 @@ class Game:
             victorySurf = self.font.render('You won', False, 'white')
             victoryRect = victorySurf.get_rect(center=(screenWidth / 2, screenHeight / 2))
             screen.blit(victorySurf, victoryRect)
-
     def run(self):
         self.player.update()
         self.player.draw(screen)
@@ -188,7 +198,7 @@ if __name__ == "__main__":
     screenHeight = 800
     screen = pygame.display.set_mode((screenWidth, screenHeight))
     fps = pygame.time.Clock()
-    gameIcon = pygame.image.load("space_invaders_1.png")
+    gameIcon = pygame.image.load("sprites/space_invaders_1.png")
     pygame.display.set_icon(gameIcon)
     pygame.display.set_caption("Space Invaders")
     game = Game()
@@ -205,5 +215,6 @@ if __name__ == "__main__":
                 game.alienShoot()
         screen.fill((30, 30, 30))
         game.run()
+        input("")
         pygame.display.flip()
         fps.tick(60)
