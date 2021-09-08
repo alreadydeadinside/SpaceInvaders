@@ -25,7 +25,7 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_SPACE] and self.ready:
             self.shootLaser()
             self.ready = False
-            self.laser_time = pygame.time.get_ticks() # works
+            self.laser_time = pygame.time.get_ticks()
 
 
     def recharge(self):
@@ -35,7 +35,7 @@ class Player(pygame.sprite.Sprite):
                 self.ready = True
 
 
-    # constraint of screen width of our games, do not allows player to go outside the textures
+    # constraint of screen width for our game, do not allows player to go outside the textures
     def constraint(self):
         if self.rect.left <= 0:
             self.rect.left = 0

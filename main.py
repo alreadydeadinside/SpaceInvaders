@@ -207,7 +207,6 @@ if __name__ == "__main__":
     pygame.time.set_timer(ALIENLASER, 500)
 
     while True:
-        keys = pygame.key.get_repeat()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
