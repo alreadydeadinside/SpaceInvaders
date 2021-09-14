@@ -16,13 +16,13 @@ class Game:
 
         # obstacle setup
         self.shape = obstacle.shape
-        self.block_size = 5
+        self.block_size = 1
         self.blocks = pygame.sprite.Group()
         self.obstacles_amount = 5
-        self.obstacles_x_position = [
-            num + (randint(30, screenWidth + 100)) for num in range(self.obstacles_amount)]
-        self.obstacles_y_position = [
-            num + (randint(30, screenWidth + 100)) for num in range(self.obstacles_amount)]
+        self.obstacles_x_position = sorted([
+            num + (randint(30, screenWidth + 100)) for num in range(self.obstacles_amount)])
+        self.obstacles_y_position = sorted([
+            num + (randint(30, screenWidth + 100)) for num in range(self.obstacles_amount)])
         #self.generateObstaclesCoordinates()
         # self.generate(
         #    offset_x=sorted(self.obstacles_x_position), offset_y=sorted(self.obstacles_y_position), x_start=randint(0, screenWidth), y_start=randint(0, screenHeight-200))
@@ -68,9 +68,8 @@ class Game:
         x = width / asteroids + randint(-20, 20)
         for line in range(0, lines):
             for asteroid in range(0, asteroids - randint(0, 2)):
-                self.generateObstacle(x_start=x, y_start=y, offset_y=sorted(self.obstacles_y_position), offset_x=sorted(self.obstacles_x_position))
-                for i in range(len(offset_y)):
-                    self.generateObstacle(x_start, y_start, offset_x[i], offset_y[i])
+                for i in range(len(self.obstacles_y_position)):
+                    self.generateObstacle(x_start=x, y_start=y, offset_x=self.obstacles_x_position[i], offset_y=self.obstacles_y_position[i])
                 x += randint(60, width / asteroids)
             y += randint(60, height / lines)
             x = width / asteroids + randint(-20, 20)
