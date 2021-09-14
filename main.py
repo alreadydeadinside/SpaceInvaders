@@ -7,6 +7,7 @@ from player import Player
 import obstacle
 
 
+
 class Game:
     def __init__(self):
         # player setup
@@ -17,12 +18,15 @@ class Game:
         self.shape = obstacle.shape
         self.block_size = 5
         self.blocks = pygame.sprite.Group()
-        self.obstacles_amount = 8
+        self.obstacles_amount = 5
         self.obstacles_x_position = [
-            num * (screenWidth / self.obstacles_amount) for num in range(self.obstacles_amount)]
-        self.generateMultipleObstacles(
-            *self.obstacles_x_position, x_start=screenWidth / 30, y_start=680)
-
+            num + (randint(30, screenWidth + 100)) for num in range(self.obstacles_amount)]
+        self.obstacles_y_position = [
+            num + (randint(30, screenWidth + 100)) for num in range(self.obstacles_amount)]
+        #self.generateObstaclesCoordinates()
+        # self.generate(
+        #    offset_x=sorted(self.obstacles_x_position), offset_y=sorted(self.obstacles_y_position), x_start=randint(0, screenWidth), y_start=randint(0, screenHeight-200))
+        self.generate(width=screenWidth, height=screenHeight, lines=5, asteroids=self.obstacles_amount)
         # aliens setup + extra
         self.aliens = pygame.sprite.Group()
         self.alien_lasers = pygame.sprite.Group()
@@ -40,34 +44,57 @@ class Game:
         self.font = pygame.font.Font("font/Pixeled.ttf", 20)
 
         # music setup
-        music = pygame.mixer.Sound('audio/main.wav')
-        music.set_volume(0.2)
-        music.play(loops=-1)
+        # music = pygame.mixer.Sound('audio/main.wav')
+        # music.set_volume(0.2)
+        # music.play(loops=-1)
         self.laser_sound = pygame.mixer.Sound('audio/shoot.wav')
         self.laser_sound.set_volume(0.1)
         self.explosion_sound = pygame.mixer.Sound('audio/explosion.wav')
         self.explosion_sound.set_volume(0.1)
 
     # ===== Obstacle Methods =====
-    def generateObstacle(self, x_start, y_start, offset_x):
+    # def generateObstaclesCoordinates(self):
+    #     x = 0
+    #     y = 0
+    #     for i in range(self.obstacles_amount):
+    #         if (x, y) in self.obstacles_coordinates:
+    #             x = randint(0, screenWidth - 200)
+    #             y = randint(0, screenHeight - 300)
+    #         self.obstacles_coordinates.append((x, y))
+
+
+    def generate(self, width, height, lines, asteroids):
+        y = height / 5 + randint(-20, 20)
+        x = width / asteroids + randint(-20, 20)
+        for line in range(0, lines):
+            for asteroid in range(0, asteroids - randint(0, 2)):
+                self.generateObstacle(x_start=x, y_start=y, offset_y=sorted(self.obstacles_y_position), offset_x=sorted(self.obstacles_x_position))
+                for i in range(len(offset_y)):
+                    self.generateObstacle(x_start, y_start, offset_x[i], offset_y[i])
+                x += randint(60, width / asteroids)
+            y += randint(60, height / lines)
+            x = width / asteroids + randint(-20, 20)
+
+
+    def generateObstacle(self, x_start, y_start, offset_x, offset_y):
         # enumarate is to know, on what row we are
         for rowIndex, row in enumerate(self.shape):
             for colIndex, col in enumerate(row):
                 if col == 'x':
                     x = x_start + colIndex * self.block_size + offset_x
-                    y = y_start + rowIndex * self.block_size
+                    y = y_start + rowIndex * self.block_size + offset_y
                     block = obstacle.Block(self.block_size, 'green', x, y)
                     self.blocks.add(block)
 
-    def generateMultipleObstacles(self, *offset, x_start, y_start):
-        for offset_x in offset:
-            self.generateObstacle(x_start, y_start, offset_x)
+    def generateMultipleObstacles(self, offset_x, x_start, y_start, offset_y):
+        for i in range(len(offset_y)):
+            self.generateObstacle(x_start, y_start, offset_x[i], offset_y[i])
 
     # ==== Aliens methods ====
-    def alienSetup(self, rows, cols, x_distance=90, y_distance=48, x_offset=70, y_offset=100):
+    def alienSetup(self, rows, cols, x_distance=90, y_distance=48, x_offset=700, y_offset=100):
         for row_index, row in enumerate(range(rows)):
+            x = randint(0, cols) + randint(0, x_offset)
             for col_index, col in enumerate(range(cols)):
-                x = col_index * x_distance + x_offset
                 y = row_index * y_distance + y_offset
                 if row_index == 0:
                     alienSprite = Alien('yellow', x, y, self)
