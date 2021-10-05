@@ -1,53 +1,73 @@
-import pygame
-from laser import Laser
+import pygame as pg
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, constraint, speed):
-        super().__init__()
-        self.image = pygame.image.load("sprites/player.png").convert_alpha()
-        self.rect = self.image.get_rect(midbottom=pos)
-        self.speed = speed
-        self.max_x_constraint = constraint
-        self.ready = True
-        self.laser_time = 0
-        self.laser_cooldown = 500
-        self.lasers = pygame.sprite.Group()
+class Player:
+    player_asset = pg.image.load('pict/player.png')
+    bullet_asset = pg.image.load('pict/bullet.png')
+    player_position_x = 400
+    player_position_y = 500
+    player_speed = 0
+    bullet_position_x = 350
+    bullet_position_y = 500
+    bullet_speed = 2
+    bullet_state = "ready"
 
-    # allows you to control player using the keyboard
-    def getInput(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_RIGHT]:
-            self.rect.x += self.speed
-        elif keys[pygame.K_LEFT]:
-            self.rect.x -= self.speed
+    def drawPlayer(self, player_w, player_h, screen):
+        screen.blit(self.player_asset, (player_w, player_h))
 
-        if keys[pygame.K_SPACE] and self.ready:
-            self.shootLaser()
-            self.ready = False
-            self.laser_time = pygame.time.get_ticks()
+    def playerSpeed(self, temp):
+        self.player_speed = temp
 
+    def getPlayerWidth(self):
+        return self.player_position_x
 
-    def recharge(self):
-        if not self.ready:
-            currentTime = pygame.time.get_ticks()
-            if currentTime - self.laser_time >= self.laser_cooldown:
-                self.ready = True
+    def getPlayerPos(self):
+        widthPlace = int(self.player_position_x / 64)
+        heightPlace = int(self.player_position_y / 64)
+        return heightPlace, widthPlace
 
+    def boundsLines(self):
+        if self.player_position_x <= 0:
+            self.player_position_x = 0
+        elif self.player_position_x >= 740:
+            self.player_position_x = 740
 
-    # constraint of screen width for our game, do not allows player to go outside the textures
-    def constraint(self):
-        if self.rect.left <= 0:
-            self.rect.left = 0
-        if self.rect.right >= self.max_x_constraint:
-            self.rect.right = self.max_x_constraint
+    def bullet(self, bullet_w, bullet_h, screen):
+        self.bullet_state = "not ready"
+        screen.blit(self.bullet_asset, (bullet_w + 16, bullet_h + 10))
 
-    def shootLaser(self):
-        self.lasers.add(Laser(self.rect.center, -8, self.rect.bottom))
+    def bulletWidth(self, coord):
+        self.bullet_position_x = coord
 
+    def bulletHeight(self):
+        return self.bullet_position_x
 
-    def update(self):
-        self.getInput()
-        self.constraint()
-        self.recharge()
-        self.lasers.update()
+    def bulletState(self, temp):
+        self.bullet_state = temp
+
+    def bulletSpeed(self):
+        self.bullet_position_y -= self.bullet_speed
+
+    def setBulletHeight(self, change):
+        self.bullet_position_y = change
+
+    def changeYPosition(self, change):
+        self.bullet_position_y += change
+
+    def getBulletSpeed(self):
+        return self.bullet_speed
+
+    def setPlayerWidth(self, x):
+        self.player_position_x += x
+
+    def getPlayerSpeed(self):
+        return self.player_speed
+
+    def getPlayerH(self):
+        return self.player_position_y
+
+    def getBulletState(self):
+        return self.bullet_state
+
+    def getBulletHeight(self):
+        return self.bullet_position_y
