@@ -17,7 +17,7 @@ bullet = Player()
 game = Game()
 asteroids = Aliens()
 aliens.generateAliens()
-bfs, dfs, ucs = 0, 0, 0
+bfs, dfs, ucs, a_star = 0, 0, 0, 0
 asteroids.generateAsteroids()
 close = True
 
@@ -30,9 +30,14 @@ while close:
 
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_RIGHT:
-                player.playerSpeed(1.5)
+                player.playerSpeed(1)
             if event.key == pg.K_LEFT:
-                player.playerSpeed(-1.5)
+                player.playerSpeed(-1)
+            if event.key == pg.K_UP:
+                player.player_position_y -= 10
+            if event.key == pg.K_DOWN:
+                player.player_position_y += 10
+
             if event.key == pg.K_SPACE:
                 if bullet.getBulletState() == "ready":
                     bullet.bulletWidth(player.getPlayerWidth())
@@ -40,13 +45,16 @@ while close:
                     bullet.changeYPosition(-bullet.getBulletSpeed())
             if event.key == pg.K_z:
                 print('BFS:')
-                bfs, dfs, ucs = 1, 0, 0
+                bfs, dfs, ucs, a_star = 1, 0, 0, 0
             if event.key == pg.K_a:
                 print('UCS:')
-                bfs, dfs, ucs = 0, 0, 1
+                bfs, dfs, ucs, a_star = 0, 0, 1, 0
             if event.key == pg.K_q:
                 print('DFS:')
-                bfs, dfs, ucs = 0, 1, 0
+                bfs, dfs, ucs, a_star = 0, 1, 0, 0
+            if event.key == pg.K_e:
+                print('A*:')
+                bfs, dfs, ucs, a_star = 0, 0, 0, 1
         if event.type == pg.KEYUP:
             if event.key == pg.K_LEFT or event.key == pg.K_RIGHT:
                 player.playerSpeed(0)
@@ -71,6 +79,8 @@ while close:
         generatePath(screen, aliens, map_graph, player, asteroid_coordinates, 3)
     if ucs == 1:
         generatePath(screen, aliens, map_graph, player, asteroid_coordinates, 1)
+    if a_star == 1:
+        generatePath(screen, aliens, map_graph, player, asteroid_coordinates, 4)
     player.drawPlayer(player.getPlayerWidth(), player.getPlayerH(), screen)
     game.updateScore(15, 10, screen)
     pg.display.update()

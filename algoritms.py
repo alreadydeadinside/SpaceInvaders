@@ -20,6 +20,24 @@ def bfs(map, start, finish, aster):
                 queue.append(node)
 
 
+def ucs(map, start, finish):
+    times = time.time()
+    queue = [start]
+    parents = {start: None}
+    algorithmicTime(times)
+    while len(queue) != 0:
+        present_node = queue.pop(0)
+        if present_node == finish:
+            return getPath(parents, finish)
+
+        neighbors = map[present_node]
+
+        for node in neighbors:
+            if node not in parents:
+                parents[node] = present_node
+                queue.append(node)
+
+
 def dfs(map, start, finish, aster):
     times = time.time()
     visited_nodes = []
@@ -46,22 +64,37 @@ def dfs(map, start, finish, aster):
     return path
 
 
-def ucs(map, start, finish):
+def heuristic(a, b):
+    (x1, y1) = a
+    (x2, y2) = b
+    return abs(x1 - x2) + abs(y1 - y2)
+
+
+def a_star_search(map, start, finish):
     times = time.time()
+    path = []
+    visited_nodes = []
+    List = PriorityQueue()
+    List.put((0, start, path, visited_nodes))
     queue = [start]
     parents = {start: None}
+
     algorithmicTime(times)
-    while len(queue) != 0:
-        present_node = queue.pop(0)
-        if present_node == finish:
-            return getPath(parents, finish)
+    while not List.empty():
+        List.get()
 
-        neighbors = map[present_node]
+        while len(queue) != 0:
+            present_node = queue.pop(0)
+            if present_node == finish:
+                return getPath(parents, finish)
 
-        for node in neighbors:
-            if node not in parents:
-                parents[node] = present_node
-                queue.append(node)
+            neighbors = map[present_node]
+            priority = heuristic(present_node, finish)
+            for node in neighbors:
+                if node not in parents:
+                    parents[node] = present_node
+                    queue.append(node)
+
 
 
 def algorithmicTime(startTime):

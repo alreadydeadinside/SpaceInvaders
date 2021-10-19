@@ -1,4 +1,4 @@
-from algoritms import bfs, dfs, ucs
+from algoritms import bfs, dfs, ucs, a_star_search
 import pygame as pg
 
 
@@ -14,6 +14,9 @@ def generatePath(screen, aliens, map, ship, aster, alg):
     if alg == 3:
         for i in range(aliens.getAliensCount()):
             path_to_alien.append(dfs(map, ship.getPlayerPos(), aliens.getAliensPosition(i), aster))
+    if alg == 4:
+        for i in range(aliens.getAliensCount()):
+            path_to_alien.append(a_star_search(map, ship.getPlayerPos(), aliens.getAliensPosition(i)))
 
     if previous_path != path_to_alien:
         for i in range(len(previous_path)):
@@ -30,6 +33,8 @@ def generatePath(screen, aliens, map, ship, aster, alg):
                 pg.draw.rect(screen, (0, 255, 100), pg.Rect(x, y, 18, 18))
             if alg == 3:
                 pg.draw.rect(screen, (255, 255, 255), pg.Rect(x, y, 18, 18))
+            if alg == 4:
+                pg.draw.rect(screen, (200, 80, 15), pg.Rect(x, y, 18, 18))
 
     else:
         for i in range(len(path_to_alien)):
@@ -42,7 +47,8 @@ def generatePath(screen, aliens, map, ship, aster, alg):
                     pg.draw.rect(screen, (0, 255, 100), pg.Rect(x, y, 18, 18))
                 if alg == 3:
                     pg.draw.rect(screen, (255, 255, 255), pg.Rect(x, y, 18, 18))
-
+                if alg == 4:
+                    pg.draw.rect(screen, (200, 80, 15), pg.Rect(x, y, 18, 18))
 
 map_graph = {
     (0, 0): set([(0, 1)]),
