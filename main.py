@@ -1,219 +1,279 @@
-from random import choice, randint
-from laser import Laser
-from alien import Alien, Extra
 import pygame
-import sys
-from player import Player
-import obstacle
+import random
+from algorithm import *
+from Search import search
+from csv_write import csv_write
+from settings import *
+from Ship import Ship
+from Bunker import Bunker
+from Dumm import *
+from Player import Player
+from Invaders import Invaders
+
+pygame.font.init()
+
+green = (0, 255, 0)
+red = (255, 0, 0)
 
 
-class Game:
-    def __init__(self):
-        # player setup
-        playerSprite = Player((screenWidth / 2, screenHeight), screenWidth, 5)
-        self.player = pygame.sprite.GroupSingle(playerSprite)
-
-        # obstacle setup
-        self.shape = obstacle.shape
-        self.block_size = 5
-        self.blocks = pygame.sprite.Group()
-        self.obstacles_amount = 8
-        self.obstacles_x_position = [
-            num * (screenWidth / self.obstacles_amount) for num in range(self.obstacles_amount)]
-        self.generateMultipleObstacles(
-            *self.obstacles_x_position, x_start=screenWidth / 30, y_start=680)
-
-        # aliens setup + extra
-        self.aliens = pygame.sprite.Group()
-        self.alien_lasers = pygame.sprite.Group()
-        self.alienSetup(rows=6, cols=8)
-        self.alien_direction = 1
-
-        self.extra = pygame.sprite.GroupSingle()
-        self.extra_spawn_time = randint(40, 80)
-
-        # health and score setup
-        self.lives = 3
-        self.live_surf = pygame.image.load('sprites/player.png').convert_alpha()
-        self.live_x_start_pos = screenWidth - (self.live_surf.get_size()[0] * 2 + 20)
-        self.score = 0
-        self.font = pygame.font.Font("font/Pixeled.ttf", 20)
-
-        # music setup
-        music = pygame.mixer.Sound('audio/main.wav')
-        music.set_volume(0.2)
-        music.play(loops=-1)
-        self.laser_sound = pygame.mixer.Sound('audio/shoot.wav')
-        self.laser_sound.set_volume(0.1)
-        self.explosion_sound = pygame.mixer.Sound('audio/explosion.wav')
-        self.explosion_sound.set_volume(0.1)
-
-    # ===== Obstacle Methods =====
-    def generateObstacle(self, x_start, y_start, offset_x):
-        # enumarate is to know, on what row we are
-        for rowIndex, row in enumerate(self.shape):
-            for colIndex, col in enumerate(row):
-                if col == 'x':
-                    x = x_start + colIndex * self.block_size + offset_x
-                    y = y_start + rowIndex * self.block_size
-                    block = obstacle.Block(self.block_size, 'green', x, y)
-                    self.blocks.add(block)
-
-    def generateMultipleObstacles(self, *offset, x_start, y_start):
-        for offset_x in offset:
-            self.generateObstacle(x_start, y_start, offset_x)
-
-    # ==== Aliens methods ====
-    def alienSetup(self, rows, cols, x_distance=90, y_distance=48, x_offset=70, y_offset=100):
-        for row_index, row in enumerate(range(rows)):
-            for col_index, col in enumerate(range(cols)):
-                x = col_index * x_distance + x_offset
-                y = row_index * y_distance + y_offset
-                if row_index == 0:
-                    alienSprite = Alien('yellow', x, y, self)
-                elif 1 <= row_index <= 2:
-                    alienSprite = Alien('green', x, y, self)
-                else:
-                    alienSprite = Alien('red', x, y, self)
-                self.aliens.add(alienSprite)
-
-    def alienPositionChecker(self):
-        all_aliens = self.aliens.sprites()
-        for alien in all_aliens:
-            if alien.rect.right >= screenWidth:
-                self.alien_direction = -1
-                self.alienMoveDown(2)
-            elif alien.rect.left <= 0:
-                self.alien_direction = 1
-                self.alienMoveDown(2)
-
-    def alienMoveDown(self, distance):
-        if self.aliens:
-            for alien in self.aliens.sprites():
-                alien.rect.y += distance
-
-    def alienShoot(self):
-        if self.aliens.sprites():
-            randomAlien = choice(self.aliens.sprites())
-            laserSprite = Laser(randomAlien.rect.center, 6, screenHeight)
-            self.alien_lasers.add(laserSprite)
-            self.laser_sound.play()
-
-    def extraAlienTimer(self):
-        self.extra_spawn_time -= 1
-        if self.extra_spawn_time <= 0:
-            self.extra.add(Extra(choice(['right', 'left']), screenWidth))
-            self.extra_spawn_time = randint(400, 800)
-
-    def collisionChecks(self):
-
-        # player lasers 
-        if self.player.sprite.lasers:
-            for laser in self.player.sprite.lasers:
-                # obstacle collisions
-                if pygame.sprite.spritecollide(laser, self.blocks, True):
-                    laser.kill()
-
-                # alien collisions
-                aliens_hit = pygame.sprite.spritecollide(laser, self.aliens, True)
-                if aliens_hit:
-                    for alien in aliens_hit:
-                        self.score += alien.value
-                    laser.kill()
-                    self.explosion_sound.play()
-
-                # extra collision
-                if pygame.sprite.spritecollide(laser, self.extra, True):
-                    self.score += 500
-                    laser.kill()
-
-        # alien lasers 
-        if self.alien_lasers:
-            for laser in self.alien_lasers:
-                # obstacle collisions
-                if pygame.sprite.spritecollide(laser, self.blocks, True):
-                    laser.kill()
-
-                if pygame.sprite.spritecollide(laser, self.player, False):
-                    laser.kill()
-                    self.lives -= 1
-                    if self.lives <= 0:
-                        pygame.quit()
-                        sys.exit()
-
-        # aliens
-        if self.aliens:
-            for alien in self.aliens:
-                pygame.sprite.spritecollide(alien, self.blocks, True)
-
-                if pygame.sprite.spritecollide(alien, self.player, False):
-                    pygame.quit()
-                    sys.exit()
-
-    def displayLives(self):
-        for live in range(self.lives - 1):
-            x = self.live_x_start_pos + (live * (self.live_surf.get_size()[0] + 10))
-            screen.blit(self.live_surf, (x, 8))
-
-    def displayScore(self):
-        scoreSurf = self.font.render(f'score: {self.score}', False, 'white')
-        scoreRect = scoreSurf.get_rect(topleft=(10, -10))
-        screen.blit(scoreSurf, scoreRect)
-
-    def victoryMessage(self):
-        if not self.aliens.sprites():
-            victorySurf = self.font.render('You won', False, 'white')
-            victoryRect = victorySurf.get_rect(center=(screenWidth / 2, screenHeight / 2))
-            screen.blit(victorySurf, victoryRect)
-
-    def run(self):
-        self.player.update()
-        self.player.draw(screen)
-        self.player.sprite.lasers.draw(screen)
-        self.blocks.draw(screen)
-        self.aliens.draw(screen)
-        self.aliens.update(self.alien_direction)
-        self.alienPositionChecker()
-        self.alien_lasers.update()
-        self.extra.update()
-        self.extraAlienTimer()
-        self.collisionChecks()
-
-        self.player.sprite.lasers.draw(screen)
-        self.player.draw(screen)
-        self.blocks.draw(screen)
-        self.aliens.draw(screen)
-        self.alien_lasers.draw(screen)
-        self.extra.draw(screen)
-        self.displayLives()
-        self.displayScore()
-        self.victoryMessage()
-
-        # update all sprite groups
-        # draw all sprite groups
+def collide(obj1, obj2):
+    offset_x = obj2.x - obj1.x
+    offset_y = obj2.y - obj1.y
+    return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) != None
 
 
-if __name__ == "__main__":
-    pygame.init()  # game start
-    screenWidth = 800
-    screenHeight = 800
-    screen = pygame.display.set_mode((screenWidth, screenHeight))
-    fps = pygame.time.Clock()
-    gameIcon = pygame.image.load("sprites/space_invaders_1.png")
-    pygame.display.set_icon(gameIcon)
-    pygame.display.set_caption("Space Invaders")
-    game = Game()
-    ALIENLASER = pygame.USEREVENT + 1
-    pygame.time.set_timer(ALIENLASER, 500)
+def main():
+    global method
+    playing = True  # running the game
+    FPS = 60
+    level = 0
+    lives = 5
+    main_font = pygame.font.SysFont("comicsans", 50)
+    lost_font = pygame.font.SysFont("comicsans", 60)
 
-    while True:
+    invaders = []  # store were the enimies will be
+    bunkers = []
+    wave_length = 1  # every level will generate a new amount of enimies
+    enemy_vel = 1  # time of movement
+
+    player_vel = 20
+    laser_vel = 30
+
+
+
+    player = Player(330, 630)
+    for i in range (4):
+        bunkers.extend([Bunker(random.randrange(0, 750),random.randrange(0, 750-YELLOW_SPACE_SHIP.get_height()-50))])
+
+    clock = pygame.time.Clock()
+
+    cast_away = False  # lost
+    lost_count = 0
+    def invadersHold():
+        lasers = []
+        for i in invaders:
+            for laser in i.lasers:
+                lasers.append(laser)
+        return lasers
+
+    def redraw_window():
+        WIN.blit(BG, (0, 0))
+        # draw text
+        lives_label = main_font.render(f"Lives: {lives}", 1, (255, 255, 255))
+        level_label = main_font.render(f"Level: {level}", 1, (255, 255, 255))
+
+        # position of the labels
+        WIN.blit(lives_label, (10, 10))
+        WIN.blit(level_label, (WIDTH - level_label.get_width() - 10, 10))
+        player.shoot()
+        for invader in invaders:  # draw the enemies
+            invader.draw(WIN)
+
+        player.draw(WIN)
+
+        if cast_away:
+            lost_label = lost_font.render("You Lost!!", 1, (255, 255, 255))
+            WIN.blit(lost_label,(WIDTH/2-lost_label.get_width()/22, 350))
+
+    while playing:  # running the game
+        clock.tick(FPS)  # it will run with the same speed in any devices
+
+
+        if lives <= 0 or player.health <= 0:
+            cast_away = True
+            lost_count += 1  # then starting a new game
+
+        if cast_away:
+            if lost_count > FPS * 3:
+                playing = False
+            else:
+                continue
+
+        # the start movement of the enemies
+        if len(invaders) == 0:
+            level += 1
+            wave_length += 2
+            for i in range(wave_length):
+
+                invaders.append(Dummy(random.randrange(50, WIDTH - 100), random.randrange(10, 200),
+                              random.choice(["red", "blue", "green"])))
+                invaders.append(Invaders(random.randrange(50, WIDTH - 100), random.randrange(10, 200),
+                                         random.choice(["red", "blue", "green"])))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:  # if we press quit it will stop running
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_z:
+                    method = snext(method)
+                    print(method)
+
+        keys = pygame.key.get_pressed()  # returning the dictionary of all the keys and tells u whether they r pressed or not at the current time
+        if keys[pygame.K_a] and player.x - player_vel > 0:  # left
+            player.x -= player_vel
+        if keys[pygame.K_d] and player.x + player_vel + player.get_width() < WIDTH:  # right
+            player.x += player_vel
+        if keys[pygame.K_w] and player.y - player_vel > 0:  # up
+            player.y -= player_vel
+        if keys[pygame.K_s] and player.y + player_vel + player.get_height() + 15 < HEIGHT:  # down
+            player.y += player_vel
+        if keys[pygame.K_SPACE]:
+            player.shoot()
+
+            # move them down
+        for bunker in bunkers:
+            # bunker.action(enemy_vel)
+            # bunker.move_lasers(laser_vel, player)
+
+            if collide(player, bunker):
+                # bunker.health -= 10
+                bunkers.remove(bunker)
+                print(1)
+            elif bunker.y + bunker.get_height() > HEIGHT:
+                lives -= 1
+                bunkers.remove(bunker)
+        #result_of_search = search(player, invaders, bunkers, method)
+
+        import time
+        start_time = time.time()
+        (alpha_beta_result, direction) = alphabeta(Node(player, invaders, invadersHold(), '', bunkers), depth_recurtion, -float('inf'),float('inf'),False)
+        #(alpha_beta_result, direction) = expectiminimax(Node(player,  invaders, invadersHold(), '', bunkers), depth_recurtion, True)
+        print((alpha_beta_result, direction.move) )
+
+        # useless
+        # move to target
+
+        # if result_of_search:
+        #     target = min(result_of_search, key=len)
+        #     if player.x + YELLOW_SPACE_SHIP.get_width() / 2 < target[-1][0] - size_of_enemies / 2:
+        #         if player.x + YELLOW_SPACE_SHIP.get_width() + player_vel < WIDTH:
+        #             player.x += player_vel
+        #
+        #     if player.x + YELLOW_SPACE_SHIP.get_width() / 2 > target[-1][0] + size_of_enemies / 2:
+        #         if player.x - player_vel > 0:
+        #             player.x -= player_vel
+        #
+        #     if player.x + YELLOW_SPACE_SHIP.get_width() / 2 in range(target[-1][0] - int(size_of_enemies / 2),
+        #                                                         target[-1][0] + int(size_of_enemies / 2)):
+        #         if player.x + YELLOW_SPACE_SHIP.get_width() / 2 < target[-1][0]:
+        #             player.x += player_vel
+        #         elif player.x + YELLOW_SPACE_SHIP.get_width() / 2 > target[-1][0]:
+        #             player.x -= player_vel
+        #         if len(player.lasers) < 8:
+        #             rand_koef = random.randint(0, 1000)
+        #             if rand_koef > 700:
+        #                 player.shoot()
+        # print(result_of_search)
+        dirs = {"<": (-8, 0), ">": (8, 0), '': (0, 0)}
+
+        # move to target
+
+        player.x += dirs[direction.move][0]
+        lasers = []
+        for i in invaders:
+            for laser in i.lasers:
+                lasers.append(laser)
+        for bul in lasers:
+            if bul.x in range(int(player.x) - int(RED_LASER.get_width()), int(player.x) + int(
+                    YELLOW_SPACE_SHIP.get_width())) and bul.y < player.y + YELLOW_SPACE_SHIP.get_height() and player.y - (
+                    bul.y + RED_LASER.get_height()) < 100:
+                # if bul.x in range(0 if ship.x-LASER_IMG.get_width()-1<0 else ship.x-LASER_IMG.get_width()-1,(WIDTH-size_of_enemies) if ship.x+size_of_enemies+1>WIDTH else WIDTH-size_of_enemies):
+                # if shipen more left from laser
+                if player.x + YELLOW_SPACE_SHIP.get_width() / 2 - bul.x + RED_LASER.get_width() / 2 < 0:
+                    # move left
+                    # if no start of map
+                    if player.x - abs(player_vel) > 0:
+                        player.x -= abs(player_vel + 10)
+                    # else move right
+                    else:
+                        player.x += abs(player_vel + 10)
+                elif player.x + YELLOW_SPACE_SHIP.get_width() / 2 - bul.x + RED_LASER.get_width() / 2 > 0:
+                    # move right
+                    # if not end of map
+                    if player.x + YELLOW_SPACE_SHIP.get_width() + abs(player_vel) < WIDTH:
+                        player.x += abs(player_vel + 10)
+                    # else move left
+                    else:
+                        player.x -= abs(player_vel + 10)
+        # # run from lasers
+        # for enemy in invaders:
+        #     for bul in player.lasers:
+        #         if bul.x in range(enemy.x - int(RED_LASER.get_width()),
+        #                           enemy.x + size_of_enemies) and bul.y + RED_LASER.get_height() > enemy.y:
+        #             # if enemyen more left from laser
+        #             if enemy.x + size_of_enemies / 2 - bul.x + RED_LASER.get_width() / 2 < 0:
+        #                 # move left
+        #                 # if no start of map
+        #                 if enemy.x - 8 > 0:
+        #                     enemy.x -= 8
+        #                 # else move right
+        #                 else:
+        #                     enemy.x += 8*5
+        #             elif enemy.x + size_of_enemies / 2 - bul.x + RED_LASER.get_width() / 2 > 0:
+        #                 # move right
+        #                 # if not end of map
+        #                 if enemy.x + size_of_enemies + 8 < WIDTH:
+        #                     enemy.x += 8
+        #                 # else move left
+        #                 else:
+        #                     enemy.x -= 8*5
+
+
+
+        for bunker in bunkers:
+            bunker.draw(WIN)
+        # for line in result_of_search:
+        #         for i in line:
+        #             WIN.set_at((i[0], i[1]), green)
+        #             WIN.set_at((i[0] + 1, i[1]), green)
+        #             WIN.set_at((i[0] - 1, i[1]), green)
+        #             WIN.set_at((i[0], i[1] + 1), green)
+        #             WIN.set_at((i[0], i[1] - 1), green)
+        #             WIN.set_at((i[0] + 1, i[1] + 1), green)
+        #             WIN.set_at((i[0] - 1, i[1] - 1), green)
+
+        # move them down
+        for invader in invaders[:]:
+            invader.action(enemy_vel,player)
+            invader.move_lasers(laser_vel, player, bunkers)
+
+            if random.randrange(0, 2 * 60) == 1:  # probability of 50% of shooting
+                invader.shoot()
+
+            if collide(invader, player):
+                player.health -= 10
+                invaders.remove(invader)
+            elif invader.y + invader.get_height() > HEIGHT:
+                lives -= 1
+                invaders.remove(invader)
+
+
+        # Функцие мув лазерс я просто тупо добавил неограниченное количество остаточных параметров,
+        # чтобы можно было передавать несколько массивов врагов (у тебя их два - враги-корабли и астероиды)
+        player.move_lasers(-laser_vel, invaders, bunkers)  # to make the space cruft to do up
+        # Тут была главная проблема, потому что ты не проверяла на сталкивания с астероидами вообще
+
+        csv_write('output.csv', [str(cast_away), str(time.time() - start_time), str(level), 'alpha-beta', 'expetr minimax'])
+
+        pygame.display.update()  # refresh the screen
+        redraw_window()
+
+
+
+def main_menu():
+    title_font = pygame.font.SysFont("comicsans", 70)
+    playing = True
+    while playing:
+        WIN.blit(BG, (0, 0))
+        title_label = title_font.render("Press the mouse", 1, (255, 255, 255))
+        WIN.blit(title_label, (WIDTH / 2 - title_label.get_width() / 2, 350))
+        pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == ALIENLASER:
-                game.alienShoot()
-        screen.fill((30, 30, 30))
-        game.run()
-        pygame.display.flip()
-        fps.tick(60)
+                playing = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                main()
+    pygame.quit()
+
+
+main_menu()
