@@ -1,13 +1,11 @@
 import random
-from algorithm import *
-
 from fileWrite import csv_write
 from settings import *
-
 from obstacles import Asteroid
 from dummyAlien import *
 from player import Player
 from aliens import Aliens
+from algorithm import *
 
 pygame.font.init()
 
